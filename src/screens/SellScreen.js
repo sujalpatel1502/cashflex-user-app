@@ -11,7 +11,7 @@ import {
   ScrollView,
   TextInput,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Animatable from 'react-native-animatable';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -206,7 +206,7 @@ const SellScreen = ({ route }) => {
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <CustomScreenHeader
         title="Select Brand"
         showBackButton={true}
@@ -216,7 +216,7 @@ const SellScreen = ({ route }) => {
       <View style={styles.content}>
         {loading ? renderLoader() : renderBrandsList()}
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 

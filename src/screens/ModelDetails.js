@@ -70,10 +70,11 @@ const ModelDetails = ({ route }) => {
 
   useEffect(() => {
     if (selectedRAM && productDetails) {
+      console.log('Selected RAM changed:', productDetails);
       const storageSet = new Set();
       productDetails.variants.forEach(variant => {
         if (variant.specification.RAM === selectedRAM) {
-          storageSet.add(variant.specification.STORAGE);
+          storageSet.add(variant.specification.STORAGE || variant.specification.Storage);
         }
       });
       setAvailableStorage(Array.from(storageSet));
@@ -87,7 +88,7 @@ const ModelDetails = ({ route }) => {
       const variant = productDetails.variants.find(
         v =>
           v.specification.RAM === selectedRAM &&
-          v.specification.STORAGE === selectedStorage
+          (v.specification.STORAGE === selectedStorage || v.specification.Storage === selectedStorage)
       );
       setSelectedVariant(variant);
     }
