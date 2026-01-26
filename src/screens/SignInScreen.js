@@ -93,25 +93,42 @@ const SignInScreen = ({ navigation }) => {
       const response = await authApi.Login(payload);
 
       if (response.success) {
-        const userData = response.data;
-        
-        // Store user data in local storage
-        await Storage.set(StorageKeys.IS_LOGGED_IN, true);
-        await Storage.set(StorageKeys.USER_DATA, userData);
-        
-        // Dispatch login success to Redux
-        dispatch(loginSuccess(userData));
+        // Check if OTP is required
+        if (response.requiresOTP) {
+          // Show success message
+          showToast(response.msg || 'OTP sent to your registered mobile number', 'success');
+          
+          // Navigate to OTP verification screen with email
+          setTimeout(() => {
+            navigation.navigate('OTPVerification', {
+              email: email.toLowerCase().trim(),
+              isLogin: true,
+            });
+          }, 1000);
+        } else {
+          // Direct login without OTP (if API doesn't require OTP)
+          const userData = response.data;
 
-        // Show success toast
-        showToast('Login successful!', 'success');
+          console.log("userData-----<>><<>><><<><>><<>", userData);
+          
+          // Store user data in local storage
+          await Storage.set(StorageKeys.IS_LOGGED_IN, true);
+          await Storage.set(StorageKeys.USER_DATA, userData);
+          
+          // Dispatch login success to Redux
+          dispatch(loginSuccess(userData));
 
-        // Navigate to MainTab after a short delay
-        setTimeout(() => {
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'MainTab' }],
-          });
-        }, 1000);
+          // Show success toast
+          showToast('Login successful!', 'success');
+
+          // Navigate to MainTab after a short delay
+          setTimeout(() => {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'MainTab' }],
+            });
+          }, 1000);
+        }
       } else {
         showToast(response.msg || 'Login failed. Please try again.', 'error');
       }

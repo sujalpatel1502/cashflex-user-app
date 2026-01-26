@@ -5,6 +5,7 @@ import Config from 'react-native-config';
 const userApi = {
   // Get all addresses
   getAddresses: async (id) => {
+    console.log("id in api----->>>>",id);
     try {
       const response = await axios.get(`${Config.API_URL}/addresses/${id}`);
       if (response) {
@@ -18,6 +19,7 @@ const userApi = {
 
   // Create new address
   createAddress: async (data) => {
+    console.log("data in api",data);
     try {
       const response = await axios.post(`${Config.API_URL}/addresses/`, data);
       return response.data;

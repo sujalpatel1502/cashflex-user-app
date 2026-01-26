@@ -121,35 +121,30 @@ const SignUpScreen = ({ navigation }) => {
 
     try {
       const payload = {
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        contactNumber: phone,
         email: email.toLowerCase().trim(),
+        address: address.trim(),
+        pincode: pincode,
+        password: password,
+        confirmpassword: confirmPassword,
       };
 
-      const response = await authApi.VerifyNewEmail(payload);
+      const response = await authApi.AddUser(payload);
 
       if (response.success) {
-        showToast(response.msg || 'Verification code sent!', 'success');
+        showToast(response.msg || 'Account created successfully!', 'success');
 
-        // Navigate to OTP screen with all user data
+        // Navigate to SignIn screen after a short delay
         setTimeout(() => {
-          navigation.navigate('OTPVerification', {
-            email: email.toLowerCase().trim(),
-            phone,
-            isSignUp: true,
-            userData: {
-              first_name: firstName.trim(),
-              last_name: lastName.trim(),
-              email: email.toLowerCase().trim(),
-              contactNumber: phone,
-              address: address.trim(),
-              city: city.trim(),
-              pincode: pincode,
-              password: password,
-              confirmpassword: confirmPassword,
-            },
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'SignIn' }],
           });
-        }, 1000);
+        }, 1500);
       } else {
-        showToast(response.msg || 'Failed to send verification code', 'error');
+        showToast(response.msg || 'Failed to create account. Please try again.', 'error');
       }
     } catch (error) {
       console.error('Sign up error:', error);

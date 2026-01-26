@@ -13,12 +13,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Animatable from 'react-native-animatable';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
+import { useDispatch } from 'react-redux';
 import { COLORS, FONT_FAMILY, FONT_SIZE, SPACING, BORDER_RADIUS } from '../utils';
+import { Storage, StorageKeys } from '../utils/storage';
+import { loginSuccess } from '../redux/authSlice';
 import authApi from '../services/authApi';
 import CustomToast from '../components/common/CustomToast';
 
 const OTPVerificationScreen = ({ navigation, route }) => {
-  const { email, phone, isSignUp, userData } = route.params || {};
+  const dispatch = useDispatch();
+  const { email, phone, isSignUp, isLogin, userData } = route.params || {};
   
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [timer, setTimer] = useState(60);
@@ -71,14 +75,22 @@ const OTPVerificationScreen = ({ navigation, route }) => {
 
     setLoading(true);
     try {
-      const payload = { email };
-      const response = await authApi.VerifyNewEmail(payload);
-
-      if (response.success) {
-        setTimer(60);
-        showToast('OTP has been resent to your email', 'success');
+      if (isLogin) {
+        // For login flow, call login API to resend OTP
+        // Note: We need password from previous screen, but we don't have it here
+        // So we'll just show a message that user needs to go back and try again
+        showToast('Please go back and try logging in again to receive a new OTP', 'info');
       } else {
-        showToast(response.msg || 'Failed to resend OTP', 'error');
+        // For signup flow, call VerifyNewEmail
+        const payload = { email };
+        const response = await authApi.VerifyNewEmail(payload);
+
+        if (response.success) {
+          setTimer(60);
+          showToast('OTP has been resent to your email', 'success');
+        } else {
+          showToast(response.msg || 'Failed to resend OTP', 'error');
+        }
       }
     } catch (error) {
       console.error('Resend OTP error:', error);
@@ -98,7 +110,43 @@ const OTPVerificationScreen = ({ navigation, route }) => {
     setLoading(true);
 
     try {
-      if (isSignUp && userData) {
+      if (isLogin) {
+        // Login flow - verify login OTP
+        const payload = {
+          email: email,
+          otp: otpCode,
+        };
+
+        console.log('Verifying login OTP with payload:', payload);
+
+        const response = await authApi.VerifyLoginOTP(payload);
+
+        if (response.success) {
+          const userData = response.data;
+
+          console.log("userData-----<>><<>><><<><>><<>", userData);
+          
+          // Store user data in local storage
+          await Storage.set(StorageKeys.IS_LOGGED_IN, true);
+          await Storage.set(StorageKeys.USER_DATA, userData);
+          
+          // Dispatch login success to Redux
+          dispatch(loginSuccess(userData));
+
+          // Show success toast
+          showToast(response.msg || 'Login successful!', 'success');
+
+          // Navigate to MainTab after a short delay
+          setTimeout(() => {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'MainTab' }],
+            });
+          }, 1000);
+        } else {
+          showToast(response.msg || 'OTP verification failed. Please try again.', 'error');
+        }
+      } else if (isSignUp && userData) {
         // Sign up flow - create user with OTP
         const payload = {
           ...userData,
@@ -122,15 +170,6 @@ const OTPVerificationScreen = ({ navigation, route }) => {
         } else {
           showToast(response.msg || 'Failed to create account. Please check your OTP.', 'error');
         }
-      } else {
-        // Login flow (if needed in future)
-        showToast('OTP verified successfully!', 'success');
-        setTimeout(() => {
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'SignIn' }],
-          });
-        }, 1500);
       }
     } catch (error) {
       console.error('Verification error:', error);
@@ -185,7 +224,7 @@ const OTPVerificationScreen = ({ navigation, route }) => {
           <Animatable.View animation="fadeInUp" duration={800} delay={400}>
             <Text style={styles.description}>
               Please Enter The 6 Digit Code Sent To{'\n'}
-              {email}
+              {isLogin ? 'your registered mobile number' : email}
             </Text>
           </Animatable.View>
 

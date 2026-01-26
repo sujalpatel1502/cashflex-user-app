@@ -51,34 +51,56 @@ const PickupAddressScreen = ({ route }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadUserData();
-    requestLocationPermission();
-  }, []);
-
-  useEffect(() => {
-    if (userId) {
-      loadAddresses();
-    }
+    initializeScreen();
   }, [userId]);
+
+  const initializeScreen = async () => {
+    try {
+      setLoading(true);
+      await loadUserData();
+      await requestLocationPermission();
+    } catch (error) {
+      console.log('Error initializing screen:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadUserData = async () => {
     try {
       const userData = await Storage.get(StorageKeys.USER_DATA);
+      console.log('User data loaded:', userData);
+      
       if (userData && userData.id) {
         setUserId(userData.id);
+        // Load addresses immediately after setting userId
+        await loadAddresses(userData.id);
+      } else {
+        console.log('No user data found');
+        // Still set loading to false even if no user
+        setLoading(false);
       }
     } catch (error) {
       console.log('Error loading user data:', error);
+      setLoading(false);
     }
   };
 
-  const loadAddresses = async () => {
+  const loadAddresses = async (userIdParam) => {
+    const id = userIdParam || userId;
+    
+    if (!id) {
+      console.log('No user ID available, skipping address load');
+      setLoading(false);
+      return;
+    }
+
     try {
-      setLoading(true);
-      const response = await addressApi.getAllAddresses(userId);
+      console.log('Loading addresses for user:------->>>>>', id);
+      const response = await addressApi.getAllAddresses(id);
       console.log('Addresses response:', response);
       
-      if (response.success && response.data) {
+      if (response && response.success && response.data) {
         // Transform API data to match our UI format
         const transformedAddresses = response.data.map(addr => ({
           id: addr.id,
@@ -89,11 +111,16 @@ const PickupAddressScreen = ({ route }) => {
           isDefault: addr.isDefault === 1,
         }));
         setSavedAddresses(transformedAddresses);
+        console.log('Transformed addresses:', transformedAddresses);
+      } else {
+        console.log('No addresses found or invalid response');
+        setSavedAddresses([]);
       }
     } catch (error) {
       console.log('Error loading addresses:', error);
-    } finally {
-      setLoading(false);
+      console.log('Error details:', error.message);
+      // Set empty array on error
+      setSavedAddresses([]);
     }
   };
 
@@ -125,7 +152,7 @@ const PickupAddressScreen = ({ route }) => {
         }
       }
     } catch (err) {
-      console.warn(err);
+      console.warn('Location permission error:', err);
     }
   };
 
@@ -143,7 +170,8 @@ const PickupAddressScreen = ({ route }) => {
       },
       (error) => {
         console.log('Error getting location:', error);
-        Alert.alert('Error', 'Unable to get current location');
+        // Don't show alert, just log the error
+        console.log('Using default location');
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
     );
@@ -152,7 +180,7 @@ const PickupAddressScreen = ({ route }) => {
   const handleUseCurrentLocation = () => {
     getCurrentLocation();
     setSelectedAddress({
-      id: null, // No ID for current location
+      id: null,
       type: 'Current Location',
       address: 'Using current GPS location',
       coordinates: region,

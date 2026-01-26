@@ -23,6 +23,8 @@ import {
   FONT_SIZE,
   SPACING,
   BORDER_RADIUS,
+  Storage,
+  StorageKeys,
 } from '../utils';
 import { CustomScreenHeader } from '../components/common';
 import userApi from '../services/userApi';
@@ -31,7 +33,8 @@ import userApi from '../services/userApi';
 const SavedAddresses = () => {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const userId = 47;
+  const [userId, setUserId] = useState(null);
+
 
 
   const [addresses, setAddresses] = useState([]);
@@ -46,13 +49,33 @@ const SavedAddresses = () => {
   });
   const [showDropdown, setShowDropdown] = useState(false);
 
+    const loadUserData = async () => {
+      try {
+        const userData = await Storage.get(StorageKeys.USER_DATA);
+        console.log('User data loaded:', userData);
+        
+        if (userData && userData.id) {
+          setUserId(userData.id);
+          
+        } else {
+          console.log('No user data found');
+          // Still set loading to false even if no user
+          setLoading(false);
+        }
+      } catch (error) {
+        console.log('Error loading user data:', error);
+        setLoading(false);
+      }
+    };
+
 
   const addressTypes = ['home', 'work', 'other'];
 
 
   useEffect(() => {
     getAddress();
-  }, []);
+    loadUserData();
+  }, [userId]);
 
 
   const getAddress = async () => {

@@ -22,7 +22,7 @@ const categoryApi = {
   getCategoryDetails: async (id) => {
     try {
       const response = await axios.get(
-        `${Config.API_URL}/brand/getAllMobileBrand/${id}`,
+        `${Config.API_URL}/brand/getAllCategoryBrand/${id}`,
       );
     //   console.log("response of category",response)
       if (response) {

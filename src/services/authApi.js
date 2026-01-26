@@ -45,6 +45,17 @@ const authApi = {
       return { success: false, error };
     }
   },
+
+  // Verify Login OTP
+  VerifyLoginOTP: async (data) => {
+    try {
+      const response = await axios.post(`${Config.API_URL}/user/verifyLoginOTP`, data);
+      return response.data;
+    } catch (error) {
+      console.log('error while verifying login OTP', error);
+      return { success: false, error };
+    }
+  },
 };
 
 export default authApi;
