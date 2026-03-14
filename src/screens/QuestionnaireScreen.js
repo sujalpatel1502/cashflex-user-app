@@ -5,7 +5,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Image,
   ScrollView,
   ActivityIndicator,
   Platform,
@@ -15,6 +14,7 @@ import * as Animatable from 'react-native-animatable';
 import { useNavigation } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import FastImage from 'react-native-fast-image';
 import {
   COLORS,
   FONT_FAMILY,
@@ -50,6 +50,8 @@ const QuestionnaireScreen = ({ route }) => {
   const currentScreen = validScreens[currentScreenIndex];
   const isLastScreen = currentScreenIndex === validScreens.length - 1;
   const progress = ((currentScreenIndex + 1) / validScreens.length) * 100;
+
+  console.log('Current Screen:----->>>>>', currentScreen);
 
 
   useEffect(() => {
@@ -241,27 +243,27 @@ const QuestionnaireScreen = ({ route }) => {
                 onPress={() => handleOptionSelect(question, option)}
                 activeOpacity={0.7}
               >
-                {option.Option_Image && (
-                  <Image
-                    source={{ uri: option.Option_Image }}
-                    style={styles.optionImage}
-                    resizeMode="contain"
-                  />
-                )}
-                
+                {option.Option_Image ? (
+                  <View style={styles.optionImageWrapper}>
+                    <FastImage
+                      source={{ uri: option.Option_Image }}
+                      style={styles.optionImage}
+                      resizeMode={FastImage.resizeMode.contain}
+                    />
+                  </View>
+                ) : null}
+
                 <View style={styles.optionContent}>
                   <View style={styles.optionTextContainer}>
-                    <Text style={[styles.optionName, selected && styles.optionNameSelected]}>
+                    <Text style={[styles.optionName, selected && styles.optionNameSelected]} numberOfLines={2}>
                       {option.Option_Name}
                     </Text>
-                    {option.Option_Short_Description && (
-                      <Text style={styles.optionDescription}>
+                    {option.Option_Short_Description ? (
+                      <Text style={styles.optionDescription} numberOfLines={2}>
                         {option.Option_Short_Description}
                       </Text>
-                    )}
+                    ) : null}
                   </View>
-
-
                   <View style={[styles.checkbox, selected && styles.checkboxSelected]}>
                     {selected && (
                       <Icon name="check" size={18} color={COLORS.background} />
@@ -505,9 +507,11 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
   },
   optionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#262626',
     borderRadius: BORDER_RADIUS.md,
-    padding: SPACING.md,
+    padding: SPACING.sm,
     borderWidth: 2,
     borderColor: 'transparent',
   },
@@ -515,14 +519,23 @@ const styles = StyleSheet.create({
     borderColor: COLORS.gradientStart,
     backgroundColor: 'rgba(71, 220, 136, 0.1)',
   },
+  optionImageWrapper: {
+    width: 72,
+    height: 72,
+    borderRadius: BORDER_RADIUS.sm,
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
+    marginRight: SPACING.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   optionImage: {
     width: '100%',
-    height: 120,
-    borderRadius: BORDER_RADIUS.sm,
-    marginBottom: SPACING.sm,
-    backgroundColor: '#3A3A3A',
+    height: '100%',
+    backgroundColor: '#FFFFFF',
   },
   optionContent: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',

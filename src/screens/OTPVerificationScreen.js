@@ -8,12 +8,14 @@ import {
   TextInput,
   ScrollView,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Animatable from 'react-native-animatable';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import { useDispatch } from 'react-redux';
+import RNOtpVerify from 'react-native-otp-verify';
 import { COLORS, FONT_FAMILY, FONT_SIZE, SPACING, BORDER_RADIUS } from '../utils';
 import { Storage, StorageKeys } from '../utils/storage';
 import { loginSuccess } from '../redux/authSlice';
@@ -27,7 +29,9 @@ const OTPVerificationScreen = ({ navigation, route }) => {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [timer, setTimer] = useState(60);
   const [loading, setLoading] = useState(false);
+  const [autoSubmitTimer, setAutoSubmitTimer] = useState(null);
   const inputRefs = useRef([]);
+  const autoSubmitTimeoutRef = useRef(null);
 
   // Toast state
   const [toastVisible, setToastVisible] = useState(false);
@@ -48,6 +52,77 @@ const OTPVerificationScreen = ({ navigation, route }) => {
     return () => clearInterval(interval);
   }, []);
 
+  // Auto-fill OTP from SMS
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      // Get hash for SMS Retriever API
+      RNOtpVerify.getHash()
+        .then((hash) => {
+          console.log('Hash for SMS:', hash);
+        })
+        .catch((error) => {
+          console.log('Error getting hash:', error);
+        });
+
+      // Start listening for OTP
+      RNOtpVerify.getOtp()
+        .then((p) => RNOtpVerify.addListener(otpHandler))
+        .catch((error) => {
+          console.log('Error starting OTP listener:', error);
+        });
+
+      return () => {
+        RNOtpVerify.removeListener();
+        if (autoSubmitTimeoutRef.current) {
+          clearTimeout(autoSubmitTimeoutRef.current);
+        }
+      };
+    }
+  }, []);
+
+  // OTP Handler for auto-fill
+  const otpHandler = (message) => {
+    try {
+      // Extract OTP from message
+      // Common OTP patterns: 6-digit numbers
+      const otpMatch = /(\d{6})/g.exec(message);
+      
+      if (otpMatch && otpMatch[1]) {
+        const extractedOtp = otpMatch[1];
+        console.log('Extracted OTP:', extractedOtp);
+        
+        // Fill OTP inputs
+        const otpArray = extractedOtp.split('');
+        setOtp(otpArray);
+        
+        // Show success message
+        showToast('OTP auto-filled successfully!', 'success');
+        
+        // Auto-submit after 3 seconds
+        setAutoSubmitTimer(3);
+        autoSubmitTimeoutRef.current = setTimeout(() => {
+          handleVerify(otpArray);
+        }, 3000);
+        
+        // Start countdown for auto-submit
+        const countdownInterval = setInterval(() => {
+          setAutoSubmitTimer((prev) => {
+            if (prev <= 1) {
+              clearInterval(countdownInterval);
+              return null;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      }
+      
+      // Remove listener after getting OTP
+      RNOtpVerify.removeListener();
+    } catch (error) {
+      console.log('Error handling OTP:', error);
+    }
+  };
+
   const showToast = (message, type = 'success') => {
     setToastMessage(message);
     setToastType(type);
@@ -55,6 +130,12 @@ const OTPVerificationScreen = ({ navigation, route }) => {
   };
 
   const handleOtpChange = (value, index) => {
+    // Cancel auto-submit if user manually changes OTP
+    if (autoSubmitTimeoutRef.current) {
+      clearTimeout(autoSubmitTimeoutRef.current);
+      setAutoSubmitTimer(null);
+    }
+
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
@@ -67,6 +148,12 @@ const OTPVerificationScreen = ({ navigation, route }) => {
   const handleKeyPress = (e, index) => {
     if (e.nativeEvent.key === 'Backspace' && !otp[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
+      
+      // Cancel auto-submit on backspace
+      if (autoSubmitTimeoutRef.current) {
+        clearTimeout(autoSubmitTimeoutRef.current);
+        setAutoSubmitTimer(null);
+      }
     }
   };
 
@@ -88,6 +175,15 @@ const OTPVerificationScreen = ({ navigation, route }) => {
         if (response.success) {
           setTimer(60);
           showToast('OTP has been resent to your email', 'success');
+          
+          // Restart OTP listener for new message
+          if (Platform.OS === 'android') {
+            RNOtpVerify.getOtp()
+              .then((p) => RNOtpVerify.addListener(otpHandler))
+              .catch((error) => {
+                console.log('Error restarting OTP listener:', error);
+              });
+          }
         } else {
           showToast(response.msg || 'Failed to resend OTP', 'error');
         }
@@ -100,8 +196,9 @@ const OTPVerificationScreen = ({ navigation, route }) => {
     }
   };
 
-  const handleVerify = async () => {
-    const otpCode = otp.join('');
+  const handleVerify = async (otpArray = null) => {
+    const otpCode = otpArray ? otpArray.join('') : otp.join('');
+    
     if (otpCode.length !== 6) {
       showToast('Please enter complete OTP', 'error');
       return;
@@ -176,6 +273,7 @@ const OTPVerificationScreen = ({ navigation, route }) => {
       showToast('Verification failed. Please try again.', 'error');
     } finally {
       setLoading(false);
+      setAutoSubmitTimer(null);
     }
   };
 
@@ -228,6 +326,16 @@ const OTPVerificationScreen = ({ navigation, route }) => {
             </Text>
           </Animatable.View>
 
+          {/* Auto-submit countdown indicator */}
+          {autoSubmitTimer !== null && (
+            <Animatable.View animation="bounceIn" style={styles.autoSubmitIndicator}>
+              <Icon name="clock-outline" size={16} color={COLORS.gradientStart} />
+              <Text style={styles.autoSubmitText}>
+                Auto-submitting in {autoSubmitTimer}s...
+              </Text>
+            </Animatable.View>
+          )}
+
           {/* OTP Input - 6 digits */}
           <Animatable.View animation="fadeInUp" duration={800} delay={600} style={styles.otpContainer}>
             {otp.map((digit, index) => (
@@ -269,7 +377,7 @@ const OTPVerificationScreen = ({ navigation, route }) => {
           {/* Verify Button */}
           <Animatable.View animation="fadeInUp" duration={800} delay={1000} style={styles.buttonContainer}>
             <TouchableOpacity 
-              onPress={handleVerify} 
+              onPress={() => handleVerify()} 
               activeOpacity={0.8}
               disabled={loading}
             >
@@ -428,6 +536,23 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: SPACING.xl,
+  },
+  autoSubmitIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.md,
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.md,
+    backgroundColor: 'rgba(39, 212, 228, 0.1)',
+    borderRadius: BORDER_RADIUS.md,
+    alignSelf: 'center',
+  },
+  autoSubmitText: {
+    fontSize: FONT_SIZE.xs,
+    fontFamily: FONT_FAMILY.medium,
+    color: COLORS.gradientStart,
+    marginLeft: SPACING.xs,
   },
   otpContainer: {
     flexDirection: 'row',

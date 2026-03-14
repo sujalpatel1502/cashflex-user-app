@@ -238,9 +238,9 @@ const FinalPriceScreen = ({ route }) => {
               maximumFractionDigits: 0,
             })}
           </Text>
-          <TouchableOpacity onPress={handleViewBreakup}>
+          {/* <TouchableOpacity onPress={handleViewBreakup}>
             <Text style={styles.viewBreakup}>View Breakup</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
 

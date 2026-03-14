@@ -7,3 +7,4 @@ export { default as CustomCard } from './CustomCard';
 export { default as CustomHomeHeader } from './CustomHomeHeader';
 export { default as CustomScreenHeader } from './CustomScreenHeader'; 
 export { default as CategoryGrid } from './CategoryGrid'; 
+export { default as SuccessCelebration } from './SuccessCelebration'; 

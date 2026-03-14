@@ -68,20 +68,22 @@ const CategoriesSection = ({ categories, navigation }) => {
             <View style={styles.innerWrapper}>
               {/* Content Card */}
               <View style={styles.categoryCard}>
-                {/* Category Icon/Image Container */}
-                {item.fileUrl ? (
-                  <Image 
-                    source={{ uri: item.fileUrl }} 
-                    style={styles.categoryImage} 
-                    resizeMode="contain"
-                  />
-                ) : (
-                  <Icon 
-                    name={getCategoryIcon(item.cat_name)} 
-                    size={40} 
-                    color={COLORS.textPrimary} 
-                  />
-                )}
+                {/* Category Icon/Image Container - 80% of card */}
+                <View style={styles.imageContainer}>
+                  {item.fileUrl ? (
+                    <Image 
+                      source={{ uri: item.fileUrl }} 
+                      style={styles.categoryImage} 
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <Icon 
+                      name={getCategoryIcon(item.cat_name)} 
+                      size={36} 
+                      color={COLORS.textPrimary} 
+                    />
+                  )}
+                </View>
 
                 {/* Availability Badge */}
                 
@@ -139,7 +141,7 @@ const styles = StyleSheet.create({
   },
   categoryItemWrapper: {
     width: '25%',
-    padding: SPACING.sm,
+    padding: SPACING.xs,
   },
   categoryTouchable: {
     alignItems: 'center',
@@ -150,7 +152,7 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.md,
     marginBottom: SPACING.xs,
     width: '100%',
-    minHeight: 94, // Ensures full border visibility (90 + 2*2 for margins)
+    minHeight: 88,
   },
   // Gradient border as absolute positioned layer
   gradientBorderLayer: {
@@ -169,15 +171,26 @@ const styles = StyleSheet.create({
   categoryCard: {
     backgroundColor: '#254941',
     borderRadius: BORDER_RADIUS.md - 2,
-    padding: SPACING.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 90,
+    padding: 0,
+    overflow: 'hidden',
+    minHeight: 84,
     position: 'relative',
   },
+  imageContainer: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
   categoryImage: {
-    width: 50,
-    height: 50,
+    width: '100%',
+    height: '100%',
   },
   categoryName: {
     fontSize: FONT_SIZE.xs,

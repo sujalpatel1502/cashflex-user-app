@@ -40,6 +40,7 @@
     "react-native-linear-gradient": "^2.8.3",
     "react-native-maps": "^1.26.0",
     "react-native-otp-textinput": "^1.1.6",
+    "react-native-otp-verify": "^1.1.8",
     "react-native-permissions": "^5.4.2",
     "react-native-phone-number-input": "^2.1.0",
     "react-native-reanimated": "^3.17.1",

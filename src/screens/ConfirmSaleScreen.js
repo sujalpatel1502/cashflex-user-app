@@ -29,6 +29,7 @@ import {
   StorageKeys,
 } from '../utils';
 import { CustomScreenHeader } from '../components/common';
+import {SuccessCelebration} from '../components/common'; // ← NEW
 
 const ConfirmSaleScreen = ({ route }) => {
   const navigation = useNavigation();
@@ -51,6 +52,7 @@ const ConfirmSaleScreen = ({ route }) => {
   const [showStartTimePicker, setShowStartTimePicker] = useState(false);
   const [showEndTimePicker, setShowEndTimePicker] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false); // ← NEW
 
   useEffect(() => {
     loadUserData();
@@ -69,8 +71,8 @@ const ConfirmSaleScreen = ({ route }) => {
   };
 
   const paymentModes = [
-    { id: 'card', name: 'Card Payment', icon: 'credit-card-outline' },
-    { id: 'upi', name: 'UPI Payment', icon: 'qrcode-scan' },
+    // { id: 'card', name: 'Card Payment', icon: 'credit-card-outline' },
+    // { id: 'upi', name: 'UPI Payment', icon: 'qrcode-scan' },
     { id: 'cash', name: 'Cash Payment', icon: 'cash' },
   ];
 
@@ -119,7 +121,7 @@ const ConfirmSaleScreen = ({ route }) => {
 
       const payload = {
         user_id: userId,
-        pickupAddress: pickupAddress.id || null, // null for current location
+        pickupAddress: pickupAddress.id || null,
         pickupDate: formatDate(pickupDate),
         pickupStartTime: formatTime(pickupStartTime),
         pickupEndTime: formatTime(pickupEndTime),
@@ -153,16 +155,7 @@ const ConfirmSaleScreen = ({ route }) => {
       console.log('Lead submission response:', response.data);
 
       if (response.data && response.data.success) {
-        Alert.alert(
-          'Success!',
-          'Your device sale has been confirmed. We will contact you shortly for pickup.',
-          [
-            {
-              text: 'OK',
-              onPress: () => navigation.navigate('MainTab'),
-            },
-          ]
-        );
+        setShowSuccess(true); // ← NEW: show celebration instead of Alert
       } else {
         Alert.alert('Error', response.data?.message || 'Something went wrong. Please try again.');
       }
@@ -174,7 +167,6 @@ const ConfirmSaleScreen = ({ route }) => {
     }
   };
 
-  // Calculate bottom padding including safe area
   const bottomPadding = Platform.OS === 'ios' 
     ? 100 + insets.bottom 
     : 100 + Math.max(insets.bottom, 0);
@@ -250,7 +242,6 @@ const ConfirmSaleScreen = ({ route }) => {
         <Animatable.View animation="fadeInUp" duration={800} delay={500}>
           <Text style={styles.sectionTitle}>Pickup Date & Time</Text>
           
-          {/* Date Picker */}
           <TouchableOpacity
             style={styles.dateTimeCard}
             onPress={() => setShowDatePicker(true)}
@@ -264,7 +255,6 @@ const ConfirmSaleScreen = ({ route }) => {
             <Icon name="chevron-right" size={24} color={COLORS.textSecondary} />
           </TouchableOpacity>
 
-          {/* Start Time Picker */}
           <TouchableOpacity
             style={styles.dateTimeCard}
             onPress={() => setShowStartTimePicker(true)}
@@ -278,7 +268,6 @@ const ConfirmSaleScreen = ({ route }) => {
             <Icon name="chevron-right" size={24} color={COLORS.textSecondary} />
           </TouchableOpacity>
 
-          {/* End Time Picker */}
           <TouchableOpacity
             style={styles.dateTimeCard}
             onPress={() => setShowEndTimePicker(true)}
@@ -410,6 +399,17 @@ const ConfirmSaleScreen = ({ route }) => {
           setPickupEndTime(date);
         }}
         onCancel={() => setShowEndTimePicker(false)}
+      />
+
+      {/* ← NEW: Success Celebration Overlay */}
+      <SuccessCelebration
+        visible={showSuccess}
+        onDismiss={() => {
+          setShowSuccess(false);
+          navigation.navigate('MainTab');
+        }}
+        title="🎉 Sale Confirmed!"
+        message={`Your device sale has been confirmed.\nWe will contact you shortly for pickup.`}
       />
     </SafeAreaView>
   );

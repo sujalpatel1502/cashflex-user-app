@@ -55,7 +55,12 @@ const ModelDetails = ({ route }) => {
             ramSet.add(variant.specification.RAM);
           }
         });
-        setAvailableRAM(Array.from(ramSet));
+        const ramArray = Array.from(ramSet);
+        setAvailableRAM(ramArray);
+
+        if (ramArray.length === 1) {
+          setSelectedRAM(ramArray[0]);
+        }
       }
     } catch (error) {
       console.error('Error fetching product details:', error);
@@ -77,8 +82,13 @@ const ModelDetails = ({ route }) => {
           storageSet.add(variant.specification.STORAGE || variant.specification.Storage);
         }
       });
-      setAvailableStorage(Array.from(storageSet));
-      setSelectedStorage(null);
+      const storageArray = Array.from(storageSet);
+      setAvailableStorage(storageArray);
+      if (storageArray.length === 1) {
+        setSelectedStorage(storageArray[0]);
+      } else {
+        setSelectedStorage(null);
+      }
       setSelectedVariant(null);
     }
   }, [selectedRAM, productDetails]);
